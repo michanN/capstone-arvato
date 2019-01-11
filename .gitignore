@@ -1,0 +1,8 @@
+# ignore jupyter notebook checkpoints
+.ipynb_checkpoints
+
+#
+*.pyc
+
+# ignore data files
+data/*
