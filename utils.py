@@ -256,11 +256,20 @@ def clean_data(df, feat_info, customer_data=False):
     print('****** Step 1 - Load *****')
     print(f'Preparing to clean dataset with shape: {df.shape}\n')
 
-    if df.shape[1] == 369:
+    if customer_data:
         df.drop(['CUSTOMER_GROUP', 'ONLINE_PURCHASE', 'PRODUCT_GROUP'],
                 axis=1,
                 inplace=True)
 
+    df.drop(['LNR', 'LP_LEBENSPHASE_FEIN', 'LP_LEBENSPHASE_GROB', 'CAMEO_DEU_2015'],
+            axis=1,
+            inplace=True)
+
+    feat_info = feat_info[~feat_info['attribute'].isin(
+        ['LNR', 'LP_LEBENSPHASE_FEIN', 'LP_LEBENSPHASE_GROB', 'CAMEO_DEU_2015'])]
+
+    print(f'Dropped these features from dataframe and feat_info: ')
+    print(['LNR', 'LP_LEBENSPHASE_FEIN', 'LP_LEBENSPHASE_GROB', 'CAMEO_DEU_2015'])
     print(f'Shape after Step 1 - Load: {df.shape}\n')
 
     print('****** Step 2 - Convert NaN codes *****')
@@ -370,8 +379,7 @@ def clean_data(df, feat_info, customer_data=False):
 
     print('****** Step 7 - Re-encode Multi-Level Categorical Features *****')
 
-    cat_features = ['CAMEO_DEU_2015',
-                    'CAMEO_DEUG_2015',
+    cat_features = ['CAMEO_DEUG_2015',
                     'CJT_GESAMTTYP',
                     'D19_KONSUMTYP',
                     'D19_LETZTER_KAUF_BRANCHE',
@@ -412,19 +420,14 @@ def clean_data(df, feat_info, customer_data=False):
     print(
         f'Shape after Step 8 - Re-encode Mixed Features: {df_ohe.shape}\n')
 
-    print('****** Step 9 - Drop Unknown Columns *****')
-
-    df_ohe.drop(['LNR', 'LP_LEBENSPHASE_FEIN', 'LP_LEBENSPHASE_GROB'],
-                axis=1,
-                inplace=True)
-
     # customer dataset does not contain any GEBAEUDETYP = 5
     if customer_data:
+        print('****** Step 8 - Add Missing Columns *****')
         col = 'GEBAEUDETYP_5.0'
         df_ohe[col] = 0.0
         df_ohe[col] = df_ohe[col].astype('float')
 
-    print(f'Shape after Step 9 - Drop Unknown Columns: {df_ohe.shape}\n')
+        print(f'Shape after Step 8 - Add Missing Columns: {df_ohe.shape}\n')
 
     return df_ohe
 
@@ -470,18 +473,18 @@ def interpret_pca(df, pca, component):
 def plot_pca(dim, num):
     '''
     Plots the "top" and "bottom" 4 features and weights.
-    
+
     Args:
         dim (row) - dimension from pca dataframe.
         num (int) - which dimension/compenent.
     '''
-    features = dim.iloc[:,np.r_[1:5, -4, -3, -2, -1]]
+    features = dim.iloc[:, np.r_[1:5, -4, -3, -2, -1]]
     feature_names = features.columns
     weights = features.iloc[0].values
-    
+
     sns.set(style='whitegrid')
     sns.set_color_codes('pastel')
-    fig = plt.figure(figsize=(10,5))
+    fig = plt.figure(figsize=(10, 5))
     sns.set()
 
     ax = sns.barplot(x=weights, y=feature_names)
