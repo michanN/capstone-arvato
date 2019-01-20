@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
+import re
 import datetime
 import progressbar
 
+from sklearn.externals import joblib
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans, MiniBatchKMeans
 
@@ -241,13 +243,27 @@ def get_tens_ones_digits(number):
     return int(number/10), number // 10**0 % 10
 
 
-def clean_data(df, feat_info, customer_data=False):
+def date_part(df, fldname, drop=True):
+    fld = df[fldname]
+    if not np.issubdtype(fld.dtype, np.datetime64):
+        df[fldname] = fld = pd.to_datetime(fld, infer_datetime_format=True)
+    targ_pre = re.sub('[Dd]ate$', '', fldname)
+    for n in ('Year', 'Month', 'Week', 'Day', 'Dayofweek', 'Dayofyear',
+              'Is_month_end', 'Is_month_start', 'Is_quarter_end', 'Is_quarter_start', 'Is_year_end', 'Is_year_start'):
+        df[targ_pre+n] = getattr(fld.dt, n.lower())
+    df[targ_pre+'Elapsed'] = fld.astype(np.int64) // 10**9
+    if drop:
+        df.drop(fldname, axis=1, inplace=True)
+
+
+def clean_data(df, feat_info, columns=None, customer_data=False, drop_rows=True):
     '''
     Perform feature trimming, re-encoding, and engineering on dataframe.
 
     Args: 
         df (dataframe) - dataframe to clean.
         feat_info (dataframe) - feature information
+        columns (array) - array of columns to be present in dataframe after cleaning.
         customer_data (bool) - whether df is customer data or not.
 
     Returns: 
@@ -356,19 +372,20 @@ def clean_data(df, feat_info, customer_data=False):
 
     print('****** Step 4 - Drop Rows with Missing values >= 30 % *****')
 
-    df_low_missing, _ = split_df(df_parsed, threshold=210)
+    if drop_rows:
+        df_parsed, _ = split_df(df_parsed, threshold=210)
 
     print(
-        f'Shape after Step 4 - Drop Rows with Missing values >= 30 %: {df_low_missing.shape}\n')
+        f'Shape after Step 4 - Drop Rows with Missing values >= 30 %: {df_parsed.shape}\n')
 
     print('****** Step 5 - Impute Missing Values *****')
-    df_imputed = impute(df_low_missing)
+    df_imputed = impute(df_parsed)
     if df_imputed.isnull().sum().any() == False:
         message = f'Shape after Step 5 - Impute Missing Values: {df_imputed.shape}\n'
     else:
         message = f'Step 5 - Missing Values still Found in Dataset'
     print(message)
-
+    print(f'AM NULL: {df_imputed["EINGEFUEGT_AM"].isnull().sum()}')
     print('****** Step 6 - Re-encode Binary Categorical Features *****')
 
     bin_dict = {'W': 1, 'O': 0}
@@ -404,8 +421,7 @@ def clean_data(df, feat_info, customer_data=False):
 
     print('****** Step 8 - Re-encode Mixed Features *****')
 
-    df_ohe["EINGEFUEGT_AM"] = pd.to_datetime(
-        df_ohe["EINGEFUEGT_AM"], format='%Y/%m/%d %H:%M')
+    df_ohe["EINGEFUEGT_AM"] = pd.to_datetime(df_ohe["EINGEFUEGT_AM"], format='%Y/%m/%d %H:%M')
     df_ohe["EINGEFUEGT_AM"] = df_ohe["EINGEFUEGT_AM"].dt.year
     df_ohe['CAMEO_INTL_2015'] = pd.to_numeric(df_ohe['CAMEO_INTL_2015'])
     df_ohe['DECADE'], df_ohe['MOVEMENT'] = zip(
@@ -420,21 +436,51 @@ def clean_data(df, feat_info, customer_data=False):
     print(
         f'Shape after Step 8 - Re-encode Mixed Features: {df_ohe.shape}\n')
 
-    # customer dataset does not contain any GEBAEUDETYP = 5
-    if customer_data:
-        print('****** Step 8 - Add Missing Columns *****')
-        col = 'GEBAEUDETYP_5.0'
-        df_ohe[col] = 0.0
-        df_ohe[col] = df_ohe[col].astype('float')
+    if columns is not None:
+        cols_diff = np.setdiff1d(columns, df_ohe.columns)
+        for col in cols_diff:
+            print('****** Step 8 - Add Missing Columns *****')
 
-        print(f'Shape after Step 8 - Add Missing Columns: {df_ohe.shape}\n')
+            df_ohe[col] = 0.0
+            df_ohe[col] = df_ohe[col].astype('float')
 
+            print(
+                f'Shape after Step 8 - Add Missing Columns: {df_ohe.shape}\n')
     return df_ohe
 
 
 # ******************************************************************** #
 # **************************** PCA/KMEANS **************************** #
 # ******************************************************************** #
+
+
+def clusters_predict(df):
+    '''
+    Applies scaler, pca and predicts clusters on cleaned dataset.
+
+    Args:
+        df (dataframe) - dataframe to be used.
+
+    Returns:
+        df_clusters (dataframe) - dataframe containing LNR and predicted clusters.
+    '''
+    LNR = np.zeros(df.shape[0])
+    if 'LNR' in df.columns:
+        LNR = df['LNR'].values
+        df.drop(['LNR'], axis=1, inplace=True)
+
+    scaler = joblib.load('models/scaler.save')
+    pca = joblib.load('models/pca.save')
+    kmeans = joblib.load('models/kmeans.save')
+
+    df_scaled = scaler.transform(df.astype('float'))
+    df_pca = pca.transform(df_scaled)
+    df_preds = kmeans.predict(df_pca)
+
+    df_clusters = pd.DataFrame({'LNR': LNR, 'Clusters': df_preds})
+
+    return df_clusters
+
 
 def interpret_pca(df, pca, component):
     '''

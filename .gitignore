@@ -6,3 +6,4 @@
 
 # ignore data files
 data/*
+predictions/*
