@@ -195,8 +195,6 @@ def categorical_info(df, features):
     return binary, multiple
 
 
-# dictionary that contains decade = 1st number and movement = 2nd number
-
 
 # function that converts original value into either decade or movement
 def get_decade_movement(number):
@@ -241,19 +239,6 @@ def get_tens_ones_digits(number):
         Two numbers (int): representing the original numbers 10th and 1th value.
     """
     return int(number/10), number // 10**0 % 10
-
-
-def date_part(df, fldname, drop=True):
-    fld = df[fldname]
-    if not np.issubdtype(fld.dtype, np.datetime64):
-        df[fldname] = fld = pd.to_datetime(fld, infer_datetime_format=True)
-    targ_pre = re.sub('[Dd]ate$', '', fldname)
-    for n in ('Year', 'Month', 'Week', 'Day', 'Dayofweek', 'Dayofyear',
-              'Is_month_end', 'Is_month_start', 'Is_quarter_end', 'Is_quarter_start', 'Is_year_end', 'Is_year_start'):
-        df[targ_pre+n] = getattr(fld.dt, n.lower())
-    df[targ_pre+'Elapsed'] = fld.astype(np.int64) // 10**9
-    if drop:
-        df.drop(fldname, axis=1, inplace=True)
 
 
 def clean_data(df, feat_info, columns=None, customer_data=False, drop_rows=True):
@@ -514,6 +499,23 @@ def interpret_pca(df, pca, component):
 # ******************************************************************** #
 # ***************************** PLOTTING ***************************** #
 # ******************************************************************** #
+
+def plot_missing(df, column, threshold=75):
+    '''
+    Plots the amount of missing values per column. 
+
+    Args:
+        df (dataframe) - dataframe containing columns.
+        column (string) - column to plot. Either before or after parsing missing values.
+        threshold (int) - number of features to include.
+    '''
+
+    df_missing = df.sort_values(column, ascending=False)[:threshold]
+    fig = plt.figure(figsize=(20,5))
+
+    ax = sns.barplot(df_missing.index, df_missing[column], color = sns.color_palette()[2])
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+    ax.set(title=f'Missing values {column} converting codes to NaN', ylabel='# Missing values')
 
 
 def plot_pca(dim, num):

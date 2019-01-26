@@ -12,9 +12,9 @@
 ## Installation <a name="installation"></a>
 Besides the libraries included in the Anaconda distribution for Python 3.6 the following libraries have been included in this project:
 * `progressbar` - library to display progressbar
-* `LGBM` - 
-* `XGBoost` -
-* `skopt` -
+* `LGBM` -  gradient boosting framework that uses tree based learning algorithms.
+* `XGBoost` - optimized distributed gradient boosting library designed to be highly efficient, flexible and portable.
+* `skopt` - simple and efficient library to minimize (very) expensive and noisy black-box functions.
 
 ## Introduction <a name="introduction"></a>
 This project has 2 major parts and 1 minor at the end:
@@ -31,7 +31,7 @@ This project provided by Arvato Financial Solutions was one of the available cap
 Arvato provided a couple of files for this project but as part of the terms and conditions I'm not allowed to share/include them in this repository.
 
 ## Instructions <a name="instructions"></a>
-As stated above the data for this project is not available to the public. For this reason the notebook and models provided by this repository cannot be used, but are made available to serve as a snapshot of the state of the project at the end.
+As stated above the data for this project is not publicly available. For this reason the notebook and models provided by this repository cannot be used, but are made available to serve as a snapshot of the state of the project at the end.
 
 ## Licensing, Authors, Acknowledgements<a name="licensing"></a>
 I would like to thank Arvato Financial Solutions for the datasets/files and Udacity for making this project possible.
