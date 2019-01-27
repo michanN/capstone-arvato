@@ -500,6 +500,21 @@ def interpret_pca(df, pca, component):
 # ***************************** PLOTTING ***************************** #
 # ******************************************************************** #
 
+
+def plot_difference_missing(df, columns, sort, threshold):
+    '''
+    Plots the amount of missing values before and after converting missing codes 
+    values per column. 
+
+    Args:
+        df (dataframe) - dataframe containing columns.
+        columns (list) - list of columns.
+        sort (string) - column to sort by.
+        threshold (int) - number of features to include.
+    '''
+    df.sort_values(sort, ascending=False)[columns][:threshold].plot(kind='bar', figsize=(20,10))
+
+
 def plot_missing(df, column, threshold=75):
     '''
     Plots the amount of missing values per column. 
