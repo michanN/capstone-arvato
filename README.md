@@ -7,7 +7,8 @@
 3. [Project Motivation](#motivation)
 4. [Files](#files)
 5. [Instructions](#instructions)
-6. [Licensing, Authors, and Acknowledgements](#licensing)
+6. [Results](#results)
+7. [Licensing, Authors, and Acknowledgements](#licensing)
 
 ## Installation <a name="installation"></a>
 Besides the libraries included in the Anaconda distribution for Python 3.6 the following libraries have been included in this project:
@@ -32,6 +33,9 @@ Arvato provided a couple of files for this project but as part of the terms and 
 
 ## Instructions <a name="instructions"></a>
 As stated above the data for this project is not publicly available. For this reason the notebook and models provided by this repository cannot be used, but are made available to serve as a snapshot of the state of the project at the end.
+
+## Results <a name="results"></a>
+See blog post [here](https://medium.com/@michel.naslund/exploring-customer-segments-and-predicting-customer-response-361e1f097bd9) 
 
 ## Licensing, Authors, Acknowledgements<a name="licensing"></a>
 I would like to thank Arvato Financial Solutions for the datasets/files and Udacity for making this project possible.
