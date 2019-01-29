@@ -454,9 +454,9 @@ def clusters_predict(df):
         LNR = df['LNR'].values
         df.drop(['LNR'], axis=1, inplace=True)
 
-    scaler = joblib.load('models/scaler.save')
-    pca = joblib.load('models/pca.save')
-    kmeans = joblib.load('models/kmeans.save')
+    scaler = joblib.load('models/scaler3.save')
+    pca = joblib.load('models/pca3.save')
+    kmeans = joblib.load('models/kmeans3.save')
 
     df_scaled = scaler.transform(df.astype('float'))
     df_pca = pca.transform(df_scaled)
@@ -513,6 +513,49 @@ def plot_difference_missing(df, columns, sort, threshold):
         threshold (int) - number of features to include.
     '''
     df.sort_values(sort, ascending=False)[columns][:threshold].plot(kind='bar', figsize=(20,10))
+
+
+def plot_comparison(column, customer, general, clusters=[7,2]):
+    '''
+    Plots the distribution for a feature.
+    
+    Args:
+        column (string) - feature to plot.
+        customer (dataframe) - customer population cluster.
+        general (dataframe) - general population cluster.
+        clusters (list) - ints to use when pritting out title.
+    '''   
+    sns.set(style="darkgrid")
+    fig, (ax1, ax2) = plt.subplots(figsize=(12,4), ncols=2)
+    sns.countplot(x=column, data=customer, ax=ax1, palette="Set2")
+    ax1.set_xlabel('Value')
+    ax1.set_title(f'Distribution Customer population (cluster: {clusters[0]})')
+    sns.countplot(x=column, data=general, ax=ax2, palette="Set2")
+    ax2.set_xlabel('Value')
+    ax2.set_title(f'Distribution General population (cluster: {clusters[1]})')
+    fig.suptitle(f'Feature: {column}')
+
+
+def plot_comparison2(column, df):
+    '''
+    Plots the distribution for a feature.
+
+    Args:
+        feature (string) - feature to plot.
+        df (dataframe) - dataframe containing RESPONSE feature.
+    '''
+    responded = df[df['RESPONSE'] == 1]
+    not_responded = df[df['RESPONSE'] == 0]
+
+    sns.set(style="darkgrid")
+    fig, (ax1, ax2) = plt.subplots(figsize=(12,4), ncols=2)
+    sns.countplot(x=column, data=responded, ax=ax1, palette="Set2")
+    ax1.set_xlabel('Value')
+    ax1.set_title(f'Distribution for Responded = 1')
+    sns.countplot(x=column, data=not_responded, ax=ax2, palette="Set2")
+    ax2.set_xlabel('Value')
+    ax2.set_title(f'Distribution for Responded = 0')
+    fig.suptitle(f'Feature: {column}')
 
 
 def plot_missing(df, column, threshold=75):
@@ -579,3 +622,39 @@ def compare_columns(dfs, column):
                     height + 100,
                     '{:1.2f} %'.format(height/total * 100),
                     ha="center")
+
+
+def plot_feature_importances(model, model_type, features, plot_n=10):
+    '''
+    Plots n most important features and importance.
+    
+    Args:
+        model (classifier) - trained model.
+        model_type (str) - type of model.
+        features (list) - list of feature names.
+        plot_n (int) - number of features to plot.
+    '''
+    feature_importance_values= np.zeros((len(model.feature_importances_)))
+    
+    feature_importance_values += model.feature_importances_
+
+    feature_importances = pd.DataFrame({'feature': features, 'importance': feature_importance_values})
+
+    # sort based on importance
+    feature_importances = feature_importances.sort_values('importance', ascending = False).reset_index(drop = True)
+
+    # normalize the feature importances to add up to one
+    feature_importances['normalized_importance'] = feature_importances['importance'] / feature_importances['importance'].sum()
+    feature_importances['cumulative_importance'] = np.cumsum(feature_importances['normalized_importance'])
+    
+    plt.figure(figsize=(10, 6))
+    ax = plt.subplot()
+    
+    ax.barh(list(reversed(list(feature_importances.index[:plot_n]))), 
+                feature_importances['normalized_importance'][:plot_n], 
+                align = 'center', edgecolor = 'k')
+
+    # Set ticks and labels
+    ax.set_yticks(list(reversed(list(feature_importances.index[:plot_n]))))
+    ax.set_yticklabels(feature_importances['feature'][:plot_n], size = 12)
+    plt.xlabel('Normalized Importance', size = 15); plt.title(f'Feature Importances ({model_type})', size = 15)
